@@ -1,7 +1,6 @@
 #coding: utf-8
 """
-A script to scrape roadwork from the Québec transport ministry's
-quebec511.gouv.qc.ca site into an Open511 XML file.
+Scrapes traffic cameras from Quebec511 into Open511
 """
 
 import logging
