@@ -17,7 +17,8 @@ from lxml import etree
 from lxml.builder import E
 import lxml.html
 
-from open511.utils.serialization import geom_to_xml_element, get_base_open511_element
+from open511.converter import geom_to_xml_element
+from open511.utils.serialization import get_base_open511_element
 
 logger = logging.getLogger(__name__)
 
