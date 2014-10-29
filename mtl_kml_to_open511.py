@@ -100,10 +100,10 @@ def feature_to_open511_element(feature):
             start_date = _fr_string_to_date(start_date)
             end_date = _fr_string_to_date(end_date)
             if start_date:
-                sked = E.schedule(E.start_date(unicode(start_date)))
+                sked = E.recurring_schedule(E.start_date(unicode(start_date)))
                 if end_date:
                     sked.append(E.end_date(unicode(end_date)))
-                elem.append(E.schedules(sked))
+                elem.append(E.schedule(E.recurring_schedules(sked)))
         except IndexError:
             pass
 

@@ -92,13 +92,12 @@ def get_roadevent_from_summary(summary):
 
     start_date = _get_text_from_elems(root.cssselect('#tdDebut'))
     end_date = _get_text_from_elems(root.cssselect('#tdFin'))
-    if start_date or end_date:
-        sked = E.schedule()
-        if start_date:
-            sked.append(E.start_date(unicode(_str_to_date(start_date))))
+    if start_date:
+        sked = E.recurring_schedule()
+        sked.append(E.start_date(unicode(_str_to_date(start_date))))
         if end_date:
             sked.append(E.end_date(unicode(_str_to_date(end_date))))
-        elem.append(E.schedules(sked))
+        elem.append(E.schedule(E.recurring_schedules(sked)))
 
     return elem
 
