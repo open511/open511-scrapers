@@ -8,7 +8,8 @@ import datetime
 from itertools import chain
 import logging
 import json
-import urllib, urllib2
+from urllib.parse import urlencode
+from urllib.request import urlopen
 import time
 
 from django.contrib.gis.geos import Point
@@ -29,23 +30,23 @@ ALL_QUEBEC_BOUNDS = {
     'yMax': '62.5'
 }
 
-BASE_LIST_URL = 'http://carte.quebec511.gouv.qc.ca/fr/Element.ashx'
-BASE_DETAIL_URL = 'http://carte.quebec511.gouv.qc.ca/fr/Fenetres/FenetreTravailRoutier.aspx?id='
+BASE_LIST_URL = 'http://quebec511.info/fr/Carte/Element.ashx'
+BASE_DETAIL_URL = 'http://quebec511.info/fr/Carte/Fenetres/FenetreTravailRoutier.aspx?id='
 
 JURISDICTION_ID = 'mtq.scrapers.open511.org'
 
-def get_list_of_chantiers(action='EntraveMajeure', bounds=ALL_QUEBEC_BOUNDS):
+def get_list_of_chantiers(action='Chantier.Majeur', bounds=ALL_QUEBEC_BOUNDS):
     params = {
         'action': action
     }
     params.update(bounds)
 
-    url = BASE_LIST_URL + '?' + urllib.urlencode(params)
+    url = BASE_LIST_URL + '?' + urlencode(params)
 
-    resp = urllib2.urlopen(url)
+    resp = urlopen(url)
 
     try:
-        return json.load(resp)
+        return json.loads(resp.read().decode('utf8'))
     except ValueError as e:
         logger.error("Could not load JSON from %s: %r" % (url, e))
         return []
@@ -64,13 +65,13 @@ def get_roadevent_from_summary(summary):
     )
 
     url = BASE_DETAIL_URL + summary['id']
-    resp = urllib2.urlopen(url)
+    resp = urlopen(url)
     time.sleep(0.5)
 
     def set_val(tag, val):
         if val not in (None, ''):
             e = etree.Element(tag)
-            e.text = unicode(val)
+            e.text = str(val)
             elem.append(e)
 
     set_val('status', 'ACTIVE')
@@ -94,9 +95,9 @@ def get_roadevent_from_summary(summary):
     end_date = _get_text_from_elems(root.cssselect('#tdFin'))
     if start_date:
         sked = E.recurring_schedule()
-        sked.append(E.start_date(unicode(_str_to_date(start_date))))
+        sked.append(E.start_date(str(_str_to_date(start_date))))
         if end_date:
-            sked.append(E.end_date(unicode(_str_to_date(end_date))))
+            sked.append(E.end_date(str(_str_to_date(end_date))))
         elem.append(E.schedule(E.recurring_schedules(sked)))
 
     return elem
@@ -110,19 +111,19 @@ def main():
     events = E.events()
 
     for summary in chain(
-            get_list_of_chantiers(action='EntraveMajeure'),
-            get_list_of_chantiers(action='EntraveMineure')):
+            get_list_of_chantiers(action='Chantier.Majeur'),
+            get_list_of_chantiers(action='Chantier.Mineur')):
         rdev = get_roadevent_from_summary(summary)
         events.append(rdev)
     base.append(events)
 
-    print etree.tostring(base, pretty_print=True)
+    print(etree.tostring(base, pretty_print=True).decode('utf8'))
 
 
 def _str_to_date(s):
     """2012-02-12 to a datetime.date object"""
     return datetime.date(*[
-    int(x) for x in s.split('-')
+        int(x) for x in s.split('-')
     ])
 
 
