@@ -11,7 +11,7 @@ import os
 import re
 import sys
 import tempfile
-import urllib2
+from urllib.request import urlopen
 
 from django.contrib.gis.gdal import DataSource
 from lxml import etree
@@ -34,7 +34,7 @@ def feature_to_open511_element(feature):
     # there'll probably have to be some code in the importer
     # that compares to existing entries in the DB to determine whether
     # this is new or modified...
-    id = hashlib.md5(feature.geom.wkt).hexdigest()
+    id = hashlib.md5(feature.geom.wkt.encode('ascii')).hexdigest()
     while id in ids_seen:
         id += 'x'
     ids_seen.add(id)
@@ -44,11 +44,11 @@ def feature_to_open511_element(feature):
     def set_val(tag, val):
         if val not in (None, ''):
             e = etree.Element(tag)
-            e.text = unicode(val)
+            e.text = str(val)
             elem.append(e)
 
     def maybe_decode(s):
-        if isinstance(s, unicode):
+        if isinstance(s, str):
             return s
         return s.decode('utf8')
 
@@ -100,9 +100,9 @@ def feature_to_open511_element(feature):
             start_date = _fr_string_to_date(start_date)
             end_date = _fr_string_to_date(end_date)
             if start_date:
-                sked = E.recurring_schedule(E.start_date(unicode(start_date)))
+                sked = E.recurring_schedule(E.start_date(str(start_date)))
                 if end_date:
-                    sked.append(E.end_date(unicode(end_date)))
+                    sked.append(E.end_date(str(end_date)))
                 elem.append(E.schedule(E.recurring_schedules(sked)))
         except IndexError:
             pass
@@ -150,7 +150,7 @@ FR_MONTHS = {
     u'décembre': 12
 }
 
-fr_date_re = re.compile(ur'(\d\d?) (%s) (\d{4})' % '|'.join(FR_MONTHS.keys()))
+fr_date_re = re.compile(r'(\d\d?) (%s) (\d{4})' % '|'.join(FR_MONTHS.keys()))
 
 
 def _fr_string_to_date(s):
@@ -166,11 +166,10 @@ def _fr_string_to_date(s):
     )
 
 def download_file():
-    resp = urllib2.urlopen(SOURCE_URL)
+    resp = urlopen(SOURCE_URL)
     descriptor, filename = tempfile.mkstemp(suffix='.kml')
-    f = os.fdopen(descriptor, 'w')
-    f.write(resp.read())
-    f.close()
+    os.write(descriptor, resp.read())
+    os.close(descriptor)
     return filename
 
 def main():
@@ -179,7 +178,7 @@ def main():
     if dl: filename = download_file()
     el = kml_file_to_open511_element(filename)
     if dl: os.unlink(filename)
-    print etree.tostring(el, pretty_print=True)
+    print(etree.tostring(el, pretty_print=True))
 
 if __name__ == '__main__':
     main()
