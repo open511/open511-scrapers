@@ -178,7 +178,7 @@ def main():
     if dl: filename = download_file()
     el = kml_file_to_open511_element(filename)
     if dl: os.unlink(filename)
-    print(etree.tostring(el, pretty_print=True))
+    print(etree.tostring(el, pretty_print=True).decode('utf8'))
 
 if __name__ == '__main__':
     main()
